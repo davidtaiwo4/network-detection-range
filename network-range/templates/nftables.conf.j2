@@ -8,10 +8,11 @@ table inet segmentation {
     iifname "{{ z.gateway_eth }}" ip saddr != {{ z.cidr }} counter log prefix "NF_SPOOF_DENY " drop comment "NF_SPOOF_DENY"
 {% endfor %}
 
+    # --- D4 fault: break UDP DNS return-state only, TCP DNS unaffected ---
+    udp sport {{ services.dns.port }} ct state established,related counter log prefix "FAULT_D4_UDP_DNS_RETURN_BROKEN " drop comment "FAULT_D4_UDP_DNS_RETURN_BROKEN"
+
     # --- established/related return traffic (supports NET-29, and the
     #     allow-direction half of NET-21) ---
-    udp sport {{ services.dns.port }} ct state established,related counter log prefix "FAULT_D4_UDP_DNS_RETURN_BROKEN " drop comment "FAULT_D4_UDP_DNS_RETURN_BROKEN"
-    ct state established,related counter accept comment "established-return"
     ct state established,related counter accept comment "established-return"
 
     # --- management: sole zone permitted to initiate admin sessions,
@@ -26,6 +27,8 @@ table inet segmentation {
 
     # --- all internal zones -> servers: central DNS/NTP (NET-13 style) ---
     iifname { {{ zones.values() | map(attribute='gateway_eth') | join(', ') }} } oifname "{{ zones.servers.gateway_eth }}" udp dport { {{ services.dns.port }}, {{ services.ntp.port }} } counter accept comment "central-dns-ntp"
+
+    # --- TCP DNS: must survive the D4 fault above (which only breaks UDP) ---
     iifname { {{ zones.values() | map(attribute='gateway_eth') | join(', ') }} } oifname "{{ zones.servers.gateway_eth }}" tcp dport {{ services.dns.port }} counter accept comment "central-dns-tcp"
 
     # --- guest -> dmz: public web only ---
@@ -33,15 +36,16 @@ table inet segmentation {
 
     # --- dmz -> servers: single assigned app-db port ONLY (NET-11 allow, NET-24 deny-all-else) ---
     iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport {{ services.dmz_to_server_app.port }} counter accept comment "dmz-to-approved-server-port-only"
+
     # --- P-NET fixture generic reachability grid (public-fixtures.json) ---
-    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.guest.gateway_eth }}" tcp dport { 22, 443 } counter accept comment "finance-to-guest-generic"
-    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.guest.gateway_eth }}" udp dport 53 counter accept comment "finance-to-guest-generic"
-    iifname "{{ zones.servers.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" tcp dport { 22, 443 } counter accept comment "servers-to-dmz-generic"
-    iifname "{{ zones.servers.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" udp dport 53 counter accept comment "servers-to-dmz-generic"
-    iifname "{{ zones.management.gateway_eth }}" oifname "{{ zones.users.gateway_eth }}" tcp dport 443 counter accept comment "management-to-users-generic"
-    iifname "{{ zones.management.gateway_eth }}" oifname "{{ zones.users.gateway_eth }}" udp dport 53 counter accept comment "management-to-users-generic"
-    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport 22 counter accept comment "dmz-to-servers-generic"
-    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" udp dport 53 counter accept comment "dmz-to-servers-generic"
+    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.guest.gateway_eth }}" tcp dport { 22, 443 } counter accept comment "finance-to-guest-generic-tcp"
+    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.guest.gateway_eth }}" udp dport 53 counter accept comment "finance-to-guest-generic-udp"
+    iifname "{{ zones.servers.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" tcp dport { 22, 443 } counter accept comment "servers-to-dmz-generic-tcp"
+    iifname "{{ zones.servers.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" udp dport 53 counter accept comment "servers-to-dmz-generic-udp"
+    iifname "{{ zones.management.gateway_eth }}" oifname "{{ zones.users.gateway_eth }}" tcp dport 443 counter accept comment "management-to-users-generic-tcp"
+    iifname "{{ zones.management.gateway_eth }}" oifname "{{ zones.users.gateway_eth }}" udp dport 53 counter accept comment "management-to-users-generic-udp"
+    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport 22 counter accept comment "dmz-to-servers-generic-tcp"
+    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" udp dport 53 counter accept comment "dmz-to-servers-generic-udp"
 
     counter log prefix "NF_SEGMENT_DENY " drop comment "NF_SEGMENT_DENY"
   }

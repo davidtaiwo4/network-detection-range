@@ -1,1 +1,484 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="30" time="43.433" timestamp="2026-08-09T22:38:07.953116+01:00" hostname="DESKTOP-PCG6I1P"><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-01]" time="3.083" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-02]" time="2.856" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-03]" time="0.933" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-04]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-05]" time="2.795" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-06]" time="0.706" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-07]" time="0.926" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-08]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-09]" time="2.799" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-10]" time="2.704" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-11]" time="2.665" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-12]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-13]" time="0.716" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-14]" time="2.684" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-15]" time="0.711" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-16]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-17]" time="2.733" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-18]" time="2.678" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-19]" time="0.689" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-20]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-21]" time="0.683" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-22]" time="0.737" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-23]" time="2.693" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-24]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-25]" time="2.770" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-26]" time="2.727" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-27]" time="0.685" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-28]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-29]" time="2.681" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-30]" time="0.722" /></testsuite></testsuites>
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="30" time="42.791" timestamp="2026-08-09T22:53:27.623956+01:00" hostname="DESKTOP-PCG6I1P"><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-01]" time="2.764" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-02]" time="2.743" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-03]" time="0.795"><failure message="AssertionError: P-NET-03: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-03', 'source': 'finance', 'destination': 'guest', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-03', 'destination': 'guest', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8f53060&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-03: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-03', 'source': 'finance', 'destination': 'guest', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-04]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-05]" time="2.710" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-06]" time="0.699" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-07]" time="0.737" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-08]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-09]" time="2.759" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-10]" time="2.705" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-11]" time="2.718" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-12]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-13]" time="0.703"><failure message="AssertionError: P-NET-13: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-13', 'source': 'servers', 'destination': 'dmz', 'service': 'tcp/443', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-13', 'destination': 'dmz', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8fc0180&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-13: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-13', 'source': 'servers', 'destination': 'dmz', 'service': 'tcp/443', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-14]" time="2.721" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-15]" time="0.713"><failure message="AssertionError: P-NET-15: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-15', 'source': 'dmz', 'destination': 'servers', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-15', 'destination': 'servers', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8f539c0&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-15: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-15', 'source': 'dmz', 'destination': 'servers', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-16]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-17]" time="2.709" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-18]" time="2.718" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-19]" time="0.747"><failure message="AssertionError: P-NET-19: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-19', 'source': 'finance', 'destination': 'guest', 'service': 'tcp/443', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-19', 'destination': 'guest', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8fc14e0&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-19: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-19', 'source': 'finance', 'destination': 'guest', 'service': 'tcp/443', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-20]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-21]" time="0.727"><failure message="AssertionError: P-NET-21: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-21', 'source': 'servers', 'destination': 'dmz', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-21', 'destination': 'dmz', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8fc0220&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-21: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-21', 'source': 'servers', 'destination': 'dmz', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-22]" time="0.686"><failure message="AssertionError: P-NET-22: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-22', 'source': 'management', 'destination': 'users', 'service': 'tcp/443', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-22', 'destination': 'users', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8fc0720&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-22: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-22', 'source': 'management', 'destination': 'users', 'service': 'tcp/443', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-23]" time="2.734" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-24]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-25]" time="2.776" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-26]" time="2.734" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-27]" time="0.731"><failure message="AssertionError: P-NET-27: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-27', 'source': 'finance', 'destination': 'guest', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}&#10;assert {}">case = {'case_id': 'P-NET-27', 'destination': 'guest', 'expected_log_code': 'connection', 'expected_network': 'allow', ...}
+variant = {'second_octet': 81, 'zones': {'management': {'vlan_id': 10, 'third_octet': 10, 'cidr': '10.{second_octet}.10.0/27', '...': 'tcp', 'hosted_in': 'servers', 'assumption': 'UNCONFIRMED - placeholder, verify before grading-relevant use'}, ...}}
+zone_ip = &lt;function zone_ip.&lt;locals&gt;._get at 0x7a78c8f52020&gt;
+attempt_connection = &lt;function attempt_connection.&lt;locals&gt;._attempt at 0x7a78c8fc2fc0&gt;
+counters_before_after = &lt;class 'conftest.counters_before_after.&lt;locals&gt;._Ctx'&gt;
+
+    @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
+    def test_segmentation_case(case, variant, zone_ip, attempt_connection, counters_before_after):
+        source = case["source"]
+        destination = case["destination"]
+        expected_network = case["expected_network"]  # "allow" | "deny"
+    
+        # Sensor is a non-routable mirror tap by construction (mode: mirror in
+        # variant.yml, no cidr assigned) -- it structurally cannot initiate or
+        # receive routed traffic. This is a topology-level guarantee, not a
+        # firewall-rule guarantee, the invariant is asserted directly rather
+        # than attempting a connection from a host that doesn't exist.
+        if source == "sensor" or destination == "sensor":
+            assert variant["zones"].get("sensor") is None, (
+                f"{case['case_id']}: 'sensor' must not appear as a routable zone "
+                f"in variant.yml (it is mirror-only) -- found a routable entry, "
+                f"which would break the deny-by-construction guarantee for this case."
+            )
+            assert expected_network == "deny", (
+                f"{case['case_id']}: sensor-involved cases are expected deny "
+                f"by construction; fixture says {expected_network}, mismatch "
+                f"means the fixture schema assumption needs review."
+            )
+            return
+        if source == destination:
+            # Single-host-per-zone topology: intra-zone traffic never reaches
+            # the gateway's forward chain, so it cannot be firewall-mediated
+            # here by design. Segmentation policy is zone-to-zone per the
+            # brief's own glossary (east-west = "between internal zones").
+            # Documented as an open assumption in decision-log.md.
+            assert expected_network == "allow", (
+                f"{case['case_id']}: same-zone case expected {expected_network}, "
+                f"but same-zone traffic is structurally unrestricted in this topology."
+            )
+            return
+    
+        proto, port = _parse_service(case["service"])
+        dest_ip = zone_ip(destination)
+    
+        with counters_before_after() as ctx:
+            result = attempt_connection(source, dest_ip, port, proto)
+        delta = ctx.delta()
+    
+        deny_hits = {k: v for k, v in delta.items() if k.startswith("NF_") and v &gt; 0}
+        allow_hits = {k: v for k, v in delta.items() if not k.startswith("NF_") and v &gt; 0}
+    
+        evidence = {
+            "case_id": case["case_id"],
+            "source": source,
+            "destination": destination,
+            "service": case["service"],
+            "client_returncode": result.returncode,
+            "deny_counter_hits": deny_hits,
+            "allow_counter_hits": allow_hits,
+        }
+    
+        if expected_network == "deny":
+            assert deny_hits, f"{case['case_id']}: expected deny, no deny counter incremented. Evidence: {evidence}"
+            assert not allow_hits, f"{case['case_id']}: expected deny, but an accept rule fired. Evidence: {evidence}"
+        else:
+&gt;           assert allow_hits, f"{case['case_id']}: expected allow, no accept-rule counter incremented. Evidence: {evidence}"
+E           AssertionError: P-NET-27: expected allow, no accept-rule counter incremented. Evidence: {'case_id': 'P-NET-27', 'source': 'finance', 'destination': 'guest', 'service': 'tcp/22', 'client_returncode': 1, 'deny_counter_hits': {}, 'allow_counter_hits': {}}
+E           assert {}
+
+test_segmentation.py:97: AssertionError</failure></testcase><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-28]" time="0.001" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-29]" time="2.669" /><testcase classname="test_segmentation" name="test_segmentation_case[P-NET-30]" time="0.681" /></testsuite></testsuites>
