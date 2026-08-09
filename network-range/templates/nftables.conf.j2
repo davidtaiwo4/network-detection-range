@@ -14,7 +14,6 @@ table inet segmentation {
 
     # --- management: sole zone permitted to initiate admin sessions,
     #     explicitly EXCLUDING guest (fixes base-bundle bug / NET-23) ---
-    iifname "{{ zones.users.gateway_eth }}" oifname { {{ [zones.finance.gateway_eth, zones.engineering.gateway_eth, zones.servers.gateway_eth, zones.dmz.gateway_eth] | join(', ') }} } tcp dport {{ services.admin_ssh.port }} counter accept comment "FAULT_USERS_ADMIN_INGRESS"
     iifname "{{ zones.management.gateway_eth }}" oifname { {{ [zones.finance.gateway_eth, zones.engineering.gateway_eth, zones.users.gateway_eth, zones.servers.gateway_eth, zones.dmz.gateway_eth] | join(', ') }} } tcp dport {{ services.admin_ssh.port }} counter accept comment "management-admin, guest excluded"
 
     # --- finance -> servers: payroll app AND payroll db (NET-04, NET-16) ---

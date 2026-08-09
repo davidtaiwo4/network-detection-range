@@ -7,7 +7,7 @@ ip address add {{ backbone.gateway_ip }}/30 dev eth1
 ip address add {{ z.gateway_ip }}/{{ z.prefixlen }} dev {{ z.gateway_eth }}
 {% endfor %}
 ip link set {{ sensor_eth }} promisc on
-for interface in {% for name, z in zones.items() %}{{ z.gateway_eth }} {% endfor %}; do
+for interface in {% for name, z in zones.items() if name != "dmz" %}{{ z.gateway_eth }} {% endfor %}; do
   tc qdisc add dev "$interface" clsact
   tc filter add dev "$interface" ingress matchall action mirred egress mirror dev {{ sensor_eth }}
 done
