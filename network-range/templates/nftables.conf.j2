@@ -8,9 +8,6 @@ table inet segmentation {
     iifname "{{ z.gateway_eth }}" ip saddr != {{ z.cidr }} counter log prefix "NF_SPOOF_DENY " drop comment "NF_SPOOF_DENY"
 {% endfor %}
 
-    # --- D4 fault: break UDP DNS return-state only, TCP DNS unaffected ---
-    udp sport {{ services.dns.port }} ct state established,related counter log prefix "FAULT_D4_UDP_DNS_RETURN_BROKEN " drop comment "FAULT_D4_UDP_DNS_RETURN_BROKEN"
-
     # --- established/related return traffic (supports NET-29, and the
     #     allow-direction half of NET-21) ---
     ct state established,related counter accept comment "established-return"
