@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null || true
+echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6 2>/dev/null || true
+ip address add {{ backbone.gateway_ip }}/30 dev eth1
+{% for name, z in zones.items() %}
+ip address add {{ z.gateway_ip }}/{{ z.prefixlen }} dev {{ z.gateway_eth }}
+{% endfor %}
+ip link set {{ sensor_eth }} promisc on
+for interface in {% for name, z in zones.items() %}{{ z.gateway_eth }} {% endfor %}; do
+  tc qdisc add dev "$interface" clsact
+  tc filter add dev "$interface" ingress matchall action mirred egress mirror dev {{ sensor_eth }}
+done
+sysctl -w net.ipv4.ip_forward=1
+# anti-spoof: reverse-path filtering per zone interface (supports NET-28)
+{% for name, z in zones.items() %}
+echo 1 > /proc/sys/net/ipv4/conf/{{ z.gateway_eth }}/rp_filter
+{% endfor %}
+nft -f /etc/nftables.conf

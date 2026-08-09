@@ -1,0 +1,18 @@
+%YAML 1.1
+---
+vars:
+  address-groups:
+    HOME_NET: "[10.71.0.0/16]"
+    EXTERNAL_NET: "!$HOME_NET"
+af-packet:
+  - interface: eth1
+    cluster-id: 71
+    cluster-type: cluster_flow
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types: [alert, flow, dns, http, tls]
+default-rule-path: /var/lib/suricata/rules
+rule-files: [suricata.rules]

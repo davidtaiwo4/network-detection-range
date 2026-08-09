@@ -1,0 +1,9 @@
+frr defaults traditional
+hostname nf-core
+service integrated-vtysh-config
+!
+interface eth1
+ ip address {{ backbone.core_ip }}/30
+!
+ip route 10.{{ second_octet }}.0.0/16 {{ backbone.gateway_ip }}
+line vty

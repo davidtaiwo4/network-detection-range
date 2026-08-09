@@ -1,0 +1,247 @@
+{
+  "fixtures": [
+    {
+      "case_id": "P-NET-01",
+      "destination": "finance",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/443",
+      "source": "guest"
+    },
+    {
+      "case_id": "P-NET-02",
+      "destination": "management",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "udp/53",
+      "source": "users"
+    },
+    {
+      "case_id": "P-NET-03",
+      "destination": "guest",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "finance"
+    },
+    {
+      "case_id": "P-NET-04",
+      "destination": "engineering",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/443",
+      "source": "engineering"
+    },
+    {
+      "case_id": "P-NET-05",
+      "destination": "dmz",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "udp/53",
+      "source": "servers"
+    },
+    {
+      "case_id": "P-NET-06",
+      "destination": "users",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "management"
+    },
+    {
+      "case_id": "P-NET-07",
+      "destination": "servers",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/443",
+      "source": "dmz"
+    },
+    {
+      "case_id": "P-NET-08",
+      "destination": "sensor",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "udp/53",
+      "source": "sensor"
+    },
+    {
+      "case_id": "P-NET-09",
+      "destination": "finance",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/22",
+      "source": "guest"
+    },
+    {
+      "case_id": "P-NET-10",
+      "destination": "management",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/443",
+      "source": "users"
+    },
+    {
+      "case_id": "P-NET-11",
+      "destination": "guest",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "udp/53",
+      "source": "finance"
+    },
+    {
+      "case_id": "P-NET-12",
+      "destination": "engineering",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "engineering"
+    },
+    {
+      "case_id": "P-NET-13",
+      "destination": "dmz",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/443",
+      "source": "servers"
+    },
+    {
+      "case_id": "P-NET-14",
+      "destination": "users",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "udp/53",
+      "source": "management"
+    },
+    {
+      "case_id": "P-NET-15",
+      "destination": "servers",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "dmz"
+    },
+    {
+      "case_id": "P-NET-16",
+      "destination": "sensor",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/443",
+      "source": "sensor"
+    },
+    {
+      "case_id": "P-NET-17",
+      "destination": "finance",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "udp/53",
+      "source": "guest"
+    },
+    {
+      "case_id": "P-NET-18",
+      "destination": "management",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/22",
+      "source": "users"
+    },
+    {
+      "case_id": "P-NET-19",
+      "destination": "guest",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/443",
+      "source": "finance"
+    },
+    {
+      "case_id": "P-NET-20",
+      "destination": "engineering",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "udp/53",
+      "source": "engineering"
+    },
+    {
+      "case_id": "P-NET-21",
+      "destination": "dmz",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "servers"
+    },
+    {
+      "case_id": "P-NET-22",
+      "destination": "users",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/443",
+      "source": "management"
+    },
+    {
+      "case_id": "P-NET-23",
+      "destination": "servers",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "udp/53",
+      "source": "dmz"
+    },
+    {
+      "case_id": "P-NET-24",
+      "destination": "sensor",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/22",
+      "source": "sensor"
+    },
+    {
+      "case_id": "P-NET-25",
+      "destination": "finance",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "tcp/443",
+      "source": "guest"
+    },
+    {
+      "case_id": "P-NET-26",
+      "destination": "management",
+      "expected_log_code": "deny",
+      "expected_network": "deny",
+      "service": "udp/53",
+      "source": "users"
+    },
+    {
+      "case_id": "P-NET-27",
+      "destination": "guest",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "finance"
+    },
+    {
+      "case_id": "P-NET-28",
+      "destination": "engineering",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/443",
+      "source": "engineering"
+    },
+    {
+      "case_id": "P-NET-29",
+      "destination": "dmz",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "udp/53",
+      "source": "servers"
+    },
+    {
+      "case_id": "P-NET-30",
+      "destination": "users",
+      "expected_log_code": "connection",
+      "expected_network": "allow",
+      "service": "tcp/22",
+      "source": "management"
+    }
+  ],
+  "interface_version": "2026-07",
+  "project": "SOC-A3",
+  "schema_version": "1.0"
+}

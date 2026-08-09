@@ -1,0 +1,133 @@
+# variant.yml
+# Single source of truth for addressing, VLAN IDs, and service ports.
+# topology.clab.yml, configs/*, and tests/* must all be RENDERED FROM or
+# READ FROM this file. No IP address, VLAN ID, or service port may be
+# hardcoded anywhere else in the repository.
+#
+# To switch to a hidden addressing variant, 
+# change only `second_octet` and re-render — no topology or test edits.
+
+evidence_marker: UBI-A7-3C77035E7384
+private_assignment_set: D4
+second_octet: 81          # from private overlay: "Use the address-plan second octet 81"
+
+# Backbone link between core (FRR) and gateway (nftables enforcement point)
+backbone:
+  cidr: "10.{second_octet}.254.0/30"
+  core_ip: "10.{second_octet}.254.1"
+  gateway_ip: "10.{second_octet}.254.2"
+
+# Zone definitions. third_octet is authoritative from address-plan.csv
+# (vlan_id column) — NOT the reference bundle's eth-to-zone wiring, which
+# was internally inconsistent with the published plan (servers/management
+# and guest/dmz were swapped). gateway_eth is the interface on the "gateway" node that terminates 
+# this zone; assign these however you like, keep it consistent everywhere via this file, not by re-hardcoding.
+zones:
+  management:
+    vlan_id: 10
+    third_octet: 10
+    cidr: "10.{second_octet}.10.0/27"
+    gateway_ip: "10.{second_octet}.10.1"
+    gateway_eth: eth2
+    min_hosts: 12
+    notes: "network devices and admin workstation only; sole zone permitted to initiate management sessions"
+
+  finance:
+    vlan_id: 20
+    third_octet: 20
+    cidr: "10.{second_octet}.20.0/26"
+    gateway_ip: "10.{second_octet}.20.1"
+    gateway_eth: eth3
+    min_hosts: 35
+    notes: "may reach payroll app and DNS/NTP"
+
+  engineering:
+    vlan_id: 30
+    third_octet: 30
+    cidr: "10.{second_octet}.30.0/25"
+    gateway_ip: "10.{second_octet}.30.1"
+    gateway_eth: eth4
+    min_hosts: 70
+    notes: "may reach code service; must NOT reach payroll db"
+
+  users:
+    vlan_id: 40
+    third_octet: 40
+    cidr: "10.{second_octet}.40.0/24"
+    gateway_ip: "10.{second_octet}.40.1"
+    gateway_eth: eth5
+    min_hosts: 150
+    notes: "general staff"
+
+  servers:
+    vlan_id: 50
+    third_octet: 50
+    cidr: "10.{second_octet}.50.0/27"
+    gateway_ip: "10.{second_octet}.50.1"
+    gateway_eth: eth6
+    min_hosts: 20
+    notes: "internal services: payroll app, payroll db, code service, DNS resolver"
+
+  dmz:
+    vlan_id: 60
+    third_octet: 60
+    cidr: "10.{second_octet}.60.0/28"
+    gateway_ip: "10.{second_octet}.60.1"
+    gateway_eth: eth7
+    min_hosts: 8
+    notes: "public web and relay; must reach servers only on assigned app-db port"
+
+  guest:
+    vlan_id: 70
+    third_octet: 70
+    cidr: "10.{second_octet}.70.0/24"
+    gateway_ip: "10.{second_octet}.70.1"
+    gateway_eth: eth8
+    min_hosts: 180
+    notes: "internet only; explicitly denied from management, finance, servers"
+
+  sensor:
+    # Mirror-only zone. Must NOT be able to initiate traffic into any
+    # protected zone (P-NET-08/16/24 style: sensor->sensor and any
+    # sensor-initiated new session must deny).
+    gateway_eth: eth9
+    mode: mirror
+    notes: "passive tap via tc mirred; no routable initiation rights"
+
+services:
+# Service ports referenced by control-test-matrix.csv but not numerically
+# defined anywhere else. in the supplied bundle.
+  dns:
+    port: 53
+    proto: udp
+    hosted_in: servers
+  ntp:
+    port: 123
+    proto: udp
+    hosted_in: servers
+  payroll_app:
+    port: 443
+    proto: tcp
+    hosted_in: servers
+    assumption: "UNCONFIRMED - placeholder, verify before grading-relevant use"
+  payroll_db:
+    port: 1433
+    proto: tcp
+    hosted_in: servers
+    assumption: "UNCONFIRMED - placeholder, verify before grading-relevant use"
+  code_service:
+    port: 8443
+    proto: tcp
+    hosted_in: servers
+    assumption: "UNCONFIRMED - placeholder, verify before grading-relevant use"
+  admin_ssh:
+    port: 22
+    proto: tcp
+  dmz_web:
+    ports: [80, 443]
+    proto: tcp
+    hosted_in: dmz
+  dmz_to_server_app:
+    port: 443
+    proto: tcp
+    notes: "the one 'assigned port' dmz may reach on servers; NET-24 requires all other ports denied"

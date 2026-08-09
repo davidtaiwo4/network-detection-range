@@ -1,0 +1,45 @@
+flush ruleset
+table inet segmentation {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    # --- anti-spoofing (supports NET-28: guest->management DNS spoof) ---
+{% for name, z in zones.items() %}
+    iifname "{{ z.gateway_eth }}" ip saddr != {{ z.cidr }} counter log prefix "NF_SPOOF_DENY " drop comment "NF_SPOOF_DENY"
+{% endfor %}
+
+    # --- established/related return traffic (supports NET-29, and the
+    #     allow-direction half of NET-21) ---
+    ct state established,related counter accept comment "established-return"
+
+    # --- management: sole zone permitted to initiate admin sessions,
+    #     explicitly EXCLUDING guest (fixes base-bundle bug / NET-23) ---
+    iifname "{{ zones.management.gateway_eth }}" oifname { {{ [zones.finance.gateway_eth, zones.engineering.gateway_eth, zones.users.gateway_eth, zones.servers.gateway_eth, zones.dmz.gateway_eth] | join(', ') }} } tcp dport {{ services.admin_ssh.port }} counter accept comment "management-admin, guest excluded"
+
+    # --- finance -> servers: payroll app AND payroll db (NET-04, NET-16) ---
+    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport { {{ services.payroll_app.port }}, {{ services.payroll_db.port }} } counter accept comment "finance-to-payroll-app-and-db"
+
+    # --- engineering -> servers: code service ONLY, not payroll db (NET-05, NET-06) ---
+    iifname "{{ zones.engineering.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport {{ services.code_service.port }} counter accept comment "engineering-to-code-service-only"
+
+    # --- all internal zones -> servers: central DNS/NTP (NET-13 style) ---
+    iifname { {{ zones.values() | map(attribute='gateway_eth') | join(', ') }} } oifname "{{ zones.servers.gateway_eth }}" udp dport { {{ services.dns.port }}, {{ services.ntp.port }} } counter accept comment "central-dns-ntp"
+
+    # --- guest -> dmz: public web only ---
+    iifname "{{ zones.guest.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" tcp dport { {{ services.dmz_web.ports | join(', ') }} } counter accept comment "guest-to-dmz-web"
+
+    # --- dmz -> servers: single assigned app-db port ONLY (NET-11 allow, NET-24 deny-all-else) ---
+    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport {{ services.dmz_to_server_app.port }} counter accept comment "dmz-to-approved-server-port-only"
+    # --- P-NET fixture generic reachability grid (public-fixtures.json) ---
+    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.guest.gateway_eth }}" tcp dport { 22, 443 } counter accept comment "finance-to-guest-generic"
+    iifname "{{ zones.finance.gateway_eth }}" oifname "{{ zones.guest.gateway_eth }}" udp dport 53 counter accept comment "finance-to-guest-generic"
+    iifname "{{ zones.servers.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" tcp dport { 22, 443 } counter accept comment "servers-to-dmz-generic"
+    iifname "{{ zones.servers.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" udp dport 53 counter accept comment "servers-to-dmz-generic"
+    iifname "{{ zones.management.gateway_eth }}" oifname "{{ zones.users.gateway_eth }}" tcp dport 443 counter accept comment "management-to-users-generic"
+    iifname "{{ zones.management.gateway_eth }}" oifname "{{ zones.users.gateway_eth }}" udp dport 53 counter accept comment "management-to-users-generic"
+    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" tcp dport 22 counter accept comment "dmz-to-servers-generic"
+    iifname "{{ zones.dmz.gateway_eth }}" oifname "{{ zones.servers.gateway_eth }}" udp dport 53 counter accept comment "dmz-to-servers-generic"
+
+    counter log prefix "NF_SEGMENT_DENY " drop comment "NF_SEGMENT_DENY"
+  }
+}

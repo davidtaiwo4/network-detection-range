@@ -1,0 +1,36 @@
+name: netforge-a3
+topology:
+  nodes:
+    core:
+      kind: linux
+      image: quay.io/frrouting/frr:10.2.1
+      binds:
+        - configs/core/frr.conf:/etc/frr/frr.conf:ro
+    gateway:
+      kind: linux
+      image: soc-gateway:local
+      binds:
+        - configs/gateway/bootstrap.sh:/bootstrap.sh:ro
+        - configs/gateway/nftables.conf:/etc/nftables.conf:ro
+      exec:
+        - sh /bootstrap.sh
+    sensor:
+      kind: linux
+      image: jasonish/suricata:7.0.8
+      binds:
+        - services/suricata.yaml:/etc/suricata/suricata.yaml:ro
+        - detections/suricata.rules:/var/lib/suricata/rules/suricata.rules:ro
+        - evidence:/var/log/suricata
+      cmd: "-c /etc/suricata/suricata.yaml --af-packet -vv"
+{% for name, z in zones.items() %}
+    {{ name }}:
+      kind: linux
+      image: alpine:3.20
+      exec: ["ip address add {{ z.host_ip }}/{{ z.prefixlen }} dev eth1", "ip route replace default via {{ z.gateway_ip }}"]
+{% endfor %}
+  links:
+    - endpoints: ["core:eth1", "gateway:eth1"]
+{% for name, z in zones.items() %}
+    - endpoints: ["gateway:{{ z.gateway_eth }}", "{{ name }}:eth1"]
+{% endfor %}
+    - endpoints: ["gateway:{{ sensor_eth }}", "sensor:eth1"]

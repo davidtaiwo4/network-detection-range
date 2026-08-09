@@ -1,0 +1,7 @@
+cat << 'EOF' > .gitignore
+clab-netforge-a3/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+EOF
