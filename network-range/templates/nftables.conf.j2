@@ -10,6 +10,8 @@ table inet segmentation {
 
     # --- established/related return traffic (supports NET-29, and the
     #     allow-direction half of NET-21) ---
+    udp sport {{ services.dns.port }} ct state established,related counter log prefix "FAULT_D4_UDP_DNS_RETURN_BROKEN " drop comment "FAULT_D4_UDP_DNS_RETURN_BROKEN"
+    ct state established,related counter accept comment "established-return"
     ct state established,related counter accept comment "established-return"
 
     # --- management: sole zone permitted to initiate admin sessions,
@@ -24,6 +26,7 @@ table inet segmentation {
 
     # --- all internal zones -> servers: central DNS/NTP (NET-13 style) ---
     iifname { {{ zones.values() | map(attribute='gateway_eth') | join(', ') }} } oifname "{{ zones.servers.gateway_eth }}" udp dport { {{ services.dns.port }}, {{ services.ntp.port }} } counter accept comment "central-dns-ntp"
+    iifname { {{ zones.values() | map(attribute='gateway_eth') | join(', ') }} } oifname "{{ zones.servers.gateway_eth }}" tcp dport {{ services.dns.port }} counter accept comment "central-dns-tcp"
 
     # --- guest -> dmz: public web only ---
     iifname "{{ zones.guest.gateway_eth }}" oifname "{{ zones.dmz.gateway_eth }}" tcp dport { {{ services.dmz_web.ports | join(', ') }} } counter accept comment "guest-to-dmz-web"
