@@ -4,6 +4,7 @@ render:
 	python3 network-range/render.py network-range/variant.yml
 
 lab: render
+	mkdir -p evidence
 	sudo containerlab deploy --topo topology.clab.yml
 
 baseline:
