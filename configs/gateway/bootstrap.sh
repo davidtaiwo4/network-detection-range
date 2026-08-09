@@ -11,7 +11,7 @@ ip address add 10.81.50.1/27 dev eth6
 ip address add 10.81.60.1/28 dev eth7
 ip address add 10.81.70.1/24 dev eth8
 ip link set eth9 promisc on
-for interface in eth2 eth3 eth4 eth5 eth6 eth7 eth8 ; do
+for interface in eth2 eth3 eth4 eth5 eth6 eth8 ; do
   tc qdisc add dev "$interface" clsact
   tc filter add dev "$interface" ingress matchall action mirred egress mirror dev eth9
 done
