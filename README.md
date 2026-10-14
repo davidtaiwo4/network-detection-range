@@ -1,6 +1,6 @@
 # Network Detection Range as Code
 
-A seven-zone enterprise network built entirely from code, with stateful least-privilege firewall policy, a passive IDS sensor, and an automated test suite that proves the policy works. Nothing is configured by hand: one addressing file generates the topology, routing, firewall rules and gateway setup, and the whole lab can be destroyed and rebuilt identically with one command.
+A seven-zone enterprise network built entirely from code, with stateful least-privilege firewall policy, a passive IDS sensor, and an automated test suite that proves the policy works. One addressing file generates the topology, routing, firewall rules and gateway setup.
 
 Built with containerlab, FRRouting, nftables, Suricata, Jinja2 and pytest.
 
@@ -8,7 +8,7 @@ Built with containerlab, FRRouting, nftables, Suricata, Jinja2 and pytest.
 
 - **Seven zones plus a sensor:** management, finance, engineering, users, servers, DMZ and guest, joined by a routed gateway. A passive sensor receives a mirrored copy of all zone traffic and cannot initiate connections.
 - **Policy as code:** every address, subnet, port and rule comes from `network-range/variant.yml`. Changing one value (the second octet) re-addresses the entire range with no edits to topology or tests.
-- **Proof, not screenshots:** each test pairs a client-side result with the firewall's own rule counters, so a blocked connection is shown by a named deny counter incrementing, not by a failed ping.
+- **Proof:** each test pairs a client-side result with the firewall's own rule counters, so a blocked connection is shown by a named deny counter incrementing, not by a failed ping.
 - **Fault-and-recovery workflow:** four deliberate misconfigurations were injected, diagnosed from packet and counter evidence, fixed in version control and re-tested. Each is a `FAULT:` / `FIX:` commit pair in the git history.
 - **Detection:** three Suricata signatures flag policy-violating traffic, and one was shown to fire on the same event the firewall denied.
 
