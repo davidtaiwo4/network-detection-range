@@ -1,2 +1,16 @@
-# placeholder 
-alert icmp any any -> any any (msg:"placeholder rule - lab reachable"; sid:1000001; rev:1;)
+# Rule 1: any traffic from guest into management is a segmentation violation.
+# Complements the NF_SPOOF_DENY / NF_SEGMENT_DENY firewall evidence with an
+# independent sensor-side detection of the same event class (NET-28 scenario).
+alert ip 10.81.70.0/24 any -> 10.81.10.0/27 any (msg:"SEGMENTATION VIOLATION - guest zone traffic toward management zone"; sid:1000001; rev:1; classtype:policy-violation;)
+
+# Rule 2: DNS-port traffic (query or response) where the source is outside
+# the declared DNS resolver zone (servers, 10.81.50.0/27) is anomalous --
+# either a spoofed response or an unauthorized resolver. Ties directly to
+# the D4 fault condition (UDP DNS return-state).
+alert udp any 53 -> any any (msg:"DNS response traffic from outside declared resolver zone"; ip.src != 10.81.50.0/27; sid:1000002; rev:1; classtype:policy-violation;)
+
+# Rule 3: any inbound admin-port (tcp/22) session where the source is
+# outside the sole authorized management zone (10.81.10.0/27) -- covers
+# both the published management-ingress-broadening fault and any similar
+# unauthorized admin attempt.
+alert tcp any any -> any 22 (msg:"Admin SSH session from outside management zone"; ip.src != 10.81.10.0/27; flow:to_server,established; sid:1000003; rev:1; classtype:policy-violation;)

@@ -6,6 +6,7 @@ topology:
       image: quay.io/frrouting/frr:10.2.1
       binds:
         - configs/core/frr.conf:/etc/frr/frr.conf:ro
+        - configs/core/daemons:/etc/frr/daemons:ro
     gateway:
       kind: linux
       image: soc-gateway:local

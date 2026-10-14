@@ -2,7 +2,7 @@
 ---
 vars:
   address-groups:
-    HOME_NET: "[10.71.0.0/16]"
+    HOME_NET: "[10.81.0.0/16]"
     EXTERNAL_NET: "!$HOME_NET"
 af-packet:
   - interface: eth1

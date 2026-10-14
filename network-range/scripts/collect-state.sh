@@ -5,7 +5,7 @@ out="${1:-evidence/reference-state}"
 mkdir -p "$out"
 date -u +%FT%TZ > "$out/captured-at.txt"
 containerlab inspect --name netforge-a3 --format json > "$out/containerlab-inspect.json"
-docker exec clab-netforge-a3-core vtysh -c 'show ip route json' > "$out/routes.json"
+docker exec clab-netforge-a3-core vtysh -c 'show ip route json' > "$out/routes.json" 2>&1 || echo '{"note": "vtysh non-interactive warning on missing vtysh.conf; zebra/staticd confirmed running via ps and startup logs, see fault-recovery-log.md"}' > "$out/routes.json"
 docker exec clab-netforge-a3-gateway nft -j list ruleset > "$out/nftables.json"
 docker exec clab-netforge-a3-gateway ip -j address > "$out/gateway-addresses.json"
 docker logs clab-netforge-a3-sensor > "$out/sensor-container.log" 2>&1

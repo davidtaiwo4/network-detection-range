@@ -14,7 +14,6 @@ clean:
 	-sudo containerlab destroy --topo topology.clab.yml --cleanup
 	rm -f topology.clab.yml
 	rm -rf configs/core/frr.conf configs/gateway/nftables.conf configs/gateway/bootstrap.sh
-	rm -rf evidence
 	rm -f test-results.xml
 
 test:
